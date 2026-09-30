@@ -21,65 +21,78 @@ interface OwnerDashboardProps {
   onBackToCustomer: () => void;
 }
 
-const DEMO_ORDERS: CakeOrder[] = [
-  {
-    id: 'demo-order-1',
-    orderNumber: '#C-261002-DM01A9',
-    intent: 'order',
-    customerName: '김지수',
-    customerPhone: '010-1234-5678',
-    pickupDate: '2026-10-04',
-    pickupTime: '15:30',
-    cakeSize: '1호',
-    cakeFlavor: '생딸기 생크림',
-    letteringText: 'Happy Birthday Jisoo ❤️',
-    priceEstimate: 38000,
-    status: '접수대기',
-    createdAt: Date.now() - 1000 * 60 * 18, // 18 mins ago
-    notes: '초 기본 5개 챙겨주세요! 보냉백(+1,000원) 추가 희망합니다.',
-  },
-  {
-    id: 'demo-order-2',
-    orderNumber: '#C-261001-DM02B4',
-    intent: 'order',
-    customerName: '박도현',
-    customerPhone: '010-9876-5432',
-    pickupDate: '2026-10-05',
-    pickupTime: '18:00',
-    cakeSize: '2호',
-    cakeFlavor: '발로나 초코 오레오',
-    letteringText: '부모님 30주년 축하드려요 ✨',
-    priceEstimate: 48000,
-    status: '확정완료',
-    createdAt: Date.now() - 1000 * 60 * 140, // 2.3 hours ago
-    notes: '견과류 알레르기가 있어 장식에 견과류 제외 부탁드립니다.',
-  },
-  {
-    id: 'demo-order-3',
-    orderNumber: '#C-261003-DM03C7',
-    intent: 'schedule',
-    customerName: '이서연',
-    customerPhone: '010-2468-1357',
-    pickupDate: '2026-10-06',
-    pickupTime: '11:00',
-    inquiryDetails: '월요일 정기휴무인 것을 보았는데, 혹시 오전 11시에 조기 픽업으로 1호 케이크 1개 수령이 가능할지 문의드립니다!',
-    status: '확인중',
-    createdAt: Date.now() - 1000 * 60 * 60 * 4, // 4 hours ago
-  },
-  {
-    id: 'demo-order-4',
-    orderNumber: '#C-261004-DM04D2',
-    intent: 'consult',
-    customerName: '정우진',
-    customerPhone: '010-1357-9246',
-    pickupDate: '2026-10-15',
-    pickupTime: '14:00',
-    inquiryDetails: '회사 창립기념일 답례품으로 큐브 미니케이크 30세트 패키지 단체 주문 및 개별 리본 포장 견적이 궁금하여 상담 남깁니다.',
-    status: '접수대기',
-    createdAt: Date.now() - 1000 * 60 * 60 * 6, // 6 hours ago
-    notes: '보냉 포장 필수 견적 포함 요청',
-  },
-];
+const getFutureDateString = (daysAhead: number) => {
+  const d = new Date();
+  d.setDate(d.getDate() + daysAhead);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+const getDemoOrders = (): CakeOrder[] => {
+  const now = Date.now();
+  const todayStr = getFutureDateString(0).replace(/-/g, '').slice(2);
+  return [
+    {
+      id: 'demo-order-1',
+      orderNumber: `#C-${todayStr}-DM01`,
+      intent: 'order',
+      customerName: '김지수',
+      customerPhone: '010-1234-5678',
+      pickupDate: getFutureDateString(2), // 오늘부터 2일 뒤
+      pickupTime: '15:30',
+      cakeSize: '1호',
+      cakeFlavor: '생딸기 생크림',
+      letteringText: 'Happy Birthday Jisoo ❤️',
+      priceEstimate: 38000,
+      status: '접수대기',
+      createdAt: now - 1000 * 60 * 18, // 18분 전 접수
+      notes: '초 기본 5개 챙겨주세요! 보냉백(+1,000원) 추가 희망합니다.',
+    },
+    {
+      id: 'demo-order-2',
+      orderNumber: `#C-${todayStr}-DM02`,
+      intent: 'order',
+      customerName: '박도현',
+      customerPhone: '010-9876-5432',
+      pickupDate: getFutureDateString(3), // 오늘부터 3일 뒤
+      pickupTime: '18:00',
+      cakeSize: '2호',
+      cakeFlavor: '발로나 초코 오레오',
+      letteringText: '부모님 30주년 축하드려요 ✨',
+      priceEstimate: 48000,
+      status: '확정완료',
+      createdAt: now - 1000 * 60 * 140, // 2시간 20분 전 접수
+      notes: '견과류 알레르기가 있어 장식에 견과류 제외 부탁드립니다.',
+    },
+    {
+      id: 'demo-order-3',
+      orderNumber: `#C-${todayStr}-DM03`,
+      intent: 'schedule',
+      customerName: '이서연',
+      customerPhone: '010-2468-1357',
+      pickupDate: getFutureDateString(5), // 오늘부터 5일 뒤
+      pickupTime: '11:00',
+      inquiryDetails: '월요일 정기휴무인 것을 보았는데, 혹시 오전 11시에 조기 픽업으로 1호 케이크 1개 수령이 가능할지 문의드립니다!',
+      status: '확인중',
+      createdAt: now - 1000 * 60 * 60 * 4, // 4시간 전 접수
+    },
+    {
+      id: 'demo-order-4',
+      orderNumber: `#C-${todayStr}-DM04`,
+      intent: 'consult',
+      customerName: '정우진',
+      customerPhone: '010-1357-9246',
+      pickupDate: getFutureDateString(14), // 오늘부터 14일 뒤
+      pickupTime: '14:00',
+      inquiryDetails: '회사 창립기념일 답례품으로 큐브 미니케이크 30세트 패키지 단체 주문 및 개별 리본 포장 견적이 궁금하여 상담 남깁니다.',
+      status: '접수대기',
+      createdAt: now - 1000 * 60 * 60 * 6, // 6시간 전 접수
+      notes: '보냉 포장 필수 견적 포함 요청',
+    },
+  ];
+};
 
 export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   onBackToCustomer,
@@ -109,7 +122,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   // Subscribe to orders real-time from Firestore when authenticated as owner
   useEffect(() => {
     if (isDemoMode) {
-      setOrders(DEMO_ORDERS);
+      setOrders(getDemoOrders());
       setLoadingOrders(false);
       return;
     }
@@ -342,7 +355,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             <button
               onClick={() => {
                 setIsDemoMode(true);
-                setOrders(DEMO_ORDERS);
+                setOrders(getDemoOrders());
               }}
               className="w-full h-12 rounded-full bg-[#fedcc5] text-[#785f4d] font-bold text-[14px] flex items-center justify-center gap-2 hover:bg-[#fccca7] active:scale-95 transition-all shadow-xs"
             >
@@ -450,8 +463,8 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           <button
             onClick={() => {
               if (isDemoMode) {
-                setOrders(DEMO_ORDERS);
-                showTemporaryNotice('예시 데이터가 초기 상태로 초기화되었습니다.');
+                setOrders(getDemoOrders());
+                showTemporaryNotice('예시 데이터가 오늘 기준으로 초기화되었습니다.');
               } else {
                 window.location.reload();
               }

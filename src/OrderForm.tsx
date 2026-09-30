@@ -797,7 +797,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
             </button>
             <div className="flex items-center justify-center gap-1 text-center text-[12px] text-[#625b50] mt-1">
               <span className="material-symbols-outlined text-[16px] text-[#aa2a49]">verified_user</span>
-              <span>접수 즉시 사장님 스마트폰으로 알림이 가며, 순차적으로 확인 문자를 드립니다.</span>
+              <span>사장님이 확인한 뒤 순서대로 확인 문자를 보내 드려요</span>
             </div>
           </div>
 
