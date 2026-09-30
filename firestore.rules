@@ -1,0 +1,34 @@
+// 복사했다면 이 주소를 내 Gmail로 바꾸세요
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if user is the store owner
+    function isOwner() {
+      return request.auth != null && request.auth.token.email == 'warren@codeit.com';
+    }
+
+    match /orders/{orderId} {
+      // Anyone (unauthenticated guests) can create an order/inquiry under validation:
+      // 1. Status must be '접수대기'
+      // 2. Customer name, phone, pickup date must exist with reasonable string bounds
+      // 3. User input length limits enforced
+      allow create: if request.resource.data.status == '접수대기'
+        && request.resource.data.customerName is string
+        && request.resource.data.customerName.size() > 0
+        && request.resource.data.customerName.size() <= 30
+        && request.resource.data.customerPhone is string
+        && request.resource.data.customerPhone.size() > 0
+        && request.resource.data.customerPhone.size() <= 30
+        && request.resource.data.pickupDate is string
+        && request.resource.data.pickupDate.size() > 0
+        && request.resource.data.pickupDate.size() <= 20
+        && (!('notes' in request.resource.data) || (request.resource.data.notes is string && request.resource.data.notes.size() <= 500))
+        && (!('letteringText' in request.resource.data) || (request.resource.data.letteringText is string && request.resource.data.letteringText.size() <= 100))
+        && (!('inquiryDetails' in request.resource.data) || (request.resource.data.inquiryDetails is string && request.resource.data.inquiryDetails.size() <= 1000))
+        && (!('referenceImage' in request.resource.data) || (request.resource.data.referenceImage is string && request.resource.data.referenceImage.size() <= 1000000));
+
+      // Only owner can read, update (e.g. change status), or delete orders
+      allow read, update, delete: if isOwner();
+    }
+  }
+}
