@@ -235,7 +235,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
           <div className="flex flex-col gap-1.5">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#fedcc5] text-[#785f4d] w-fit shadow-xs">
               <span className="material-symbols-outlined text-[15px] fill">cake</span>
-              <span className="text-[12px] font-semibold">연남동 1인 수제 케이크 아뜰리에</span>
+              <span className="text-[12px] font-semibold">1인 수제 케이크 아뜰리에</span>
             </div>
             <h1 className="text-[26px] font-bold text-[#1c1c18] tracking-tight mt-1">오늘의 케이크</h1>
             <p className="text-[15px] text-[#725947] leading-relaxed">
@@ -730,8 +730,18 @@ export const OrderForm: React.FC<OrderFormProps> = ({
               <label className="text-[14px] font-semibold text-[#1c1c18]">휴대폰 번호 (필수)</label>
               <input
                 type="tel"
+                maxLength={13}
                 value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value)}
+                onChange={(e) => {
+                  const raw = e.target.value.replace(/[^0-9]/g, '');
+                  if (raw.length <= 3) {
+                    setCustomerPhone(raw);
+                  } else if (raw.length <= 7) {
+                    setCustomerPhone(`${raw.slice(0, 3)}-${raw.slice(3)}`);
+                  } else {
+                    setCustomerPhone(`${raw.slice(0, 3)}-${raw.slice(3, 7)}-${raw.slice(7, 11)}`);
+                  }
+                }}
                 placeholder="010-0000-0000 (확정 문자 발송용)"
                 required
                 className="w-full h-13 px-4 rounded-xl bg-white border border-[#e6e2dc] text-[#1c1c18] text-[15px] placeholder:text-[#8b7073]/50 shadow-xs focus:outline-none focus:border-[#aa2a49] focus:ring-2 focus:ring-[#aa2a49]/20"
