@@ -21,11 +21,72 @@ interface OwnerDashboardProps {
   onBackToCustomer: () => void;
 }
 
+const DEMO_ORDERS: CakeOrder[] = [
+  {
+    id: 'demo-order-1',
+    orderNumber: '#C-261002-DM01A9',
+    intent: 'order',
+    customerName: '김지수',
+    customerPhone: '010-1234-5678',
+    pickupDate: '2026-10-04',
+    pickupTime: '15:30',
+    cakeSize: '1호',
+    cakeFlavor: '생딸기 생크림',
+    letteringText: 'Happy Birthday Jisoo ❤️',
+    priceEstimate: 38000,
+    status: '접수대기',
+    createdAt: Date.now() - 1000 * 60 * 18, // 18 mins ago
+    notes: '초 기본 5개 챙겨주세요! 보냉백(+1,000원) 추가 희망합니다.',
+  },
+  {
+    id: 'demo-order-2',
+    orderNumber: '#C-261001-DM02B4',
+    intent: 'order',
+    customerName: '박도현',
+    customerPhone: '010-9876-5432',
+    pickupDate: '2026-10-05',
+    pickupTime: '18:00',
+    cakeSize: '2호',
+    cakeFlavor: '발로나 초코 오레오',
+    letteringText: '부모님 30주년 축하드려요 ✨',
+    priceEstimate: 48000,
+    status: '확정완료',
+    createdAt: Date.now() - 1000 * 60 * 140, // 2.3 hours ago
+    notes: '견과류 알레르기가 있어 장식에 견과류 제외 부탁드립니다.',
+  },
+  {
+    id: 'demo-order-3',
+    orderNumber: '#C-261003-DM03C7',
+    intent: 'schedule',
+    customerName: '이서연',
+    customerPhone: '010-2468-1357',
+    pickupDate: '2026-10-06',
+    pickupTime: '11:00',
+    inquiryDetails: '월요일 정기휴무인 것을 보았는데, 혹시 오전 11시에 조기 픽업으로 1호 케이크 1개 수령이 가능할지 문의드립니다!',
+    status: '확인중',
+    createdAt: Date.now() - 1000 * 60 * 60 * 4, // 4 hours ago
+  },
+  {
+    id: 'demo-order-4',
+    orderNumber: '#C-261004-DM04D2',
+    intent: 'consult',
+    customerName: '정우진',
+    customerPhone: '010-1357-9246',
+    pickupDate: '2026-10-15',
+    pickupTime: '14:00',
+    inquiryDetails: '회사 창립기념일 답례품으로 큐브 미니케이크 30세트 패키지 단체 주문 및 개별 리본 포장 견적이 궁금하여 상담 남깁니다.',
+    status: '접수대기',
+    createdAt: Date.now() - 1000 * 60 * 60 * 6, // 6 hours ago
+    notes: '보냉 포장 필수 견적 포함 요청',
+  },
+];
+
 export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   onBackToCustomer,
 }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [isDemoMode, setIsDemoMode] = useState(false);
   const [orders, setOrders] = useState<CakeOrder[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [activeFilter, setActiveFilter] = useState<'all' | 'order' | 'schedule' | 'consult'>('all');
@@ -43,9 +104,16 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   }, []);
 
   const isOwner = currentUser && currentUser.email === OWNER_EMAIL;
+  const canViewDashboard = isOwner || isDemoMode;
 
   // Subscribe to orders real-time from Firestore when authenticated as owner
   useEffect(() => {
+    if (isDemoMode) {
+      setOrders(DEMO_ORDERS);
+      setLoadingOrders(false);
+      return;
+    }
+
     if (!isOwner) {
       setOrders([]);
       return;
@@ -70,7 +138,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
     );
 
     return () => unsubscribe();
-  }, [isOwner]);
+  }, [isOwner, isDemoMode]);
 
   const handleGoogleLogin = async () => {
     try {
@@ -89,6 +157,14 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   };
 
   const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
+    if (isDemoMode) {
+      setOrders((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
+      );
+      showTemporaryNotice(`[예시 모드] 상태가 [${newStatus}]으로 변경되었습니다. (화면에서만 변경)`);
+      return;
+    }
+
     try {
       await updateDoc(doc(db, 'orders', orderId), {
         status: newStatus,
@@ -100,6 +176,13 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   };
 
   const handleDeleteOrder = async (orderId: string) => {
+    if (isDemoMode) {
+      if (!confirm('정말 이 주문 내역을 삭제하시겠습니까? (예시 모드: 화면에서만 삭제)')) return;
+      setOrders((prev) => prev.filter((o) => o.id !== orderId));
+      showTemporaryNotice('[예시 모드] 주문 내역이 화면에서 삭제되었습니다.');
+      return;
+    }
+
     if (!confirm('정말 이 주문 내역을 삭제하시겠습니까?')) return;
     try {
       await deleteDoc(doc(db, 'orders', orderId));
@@ -198,8 +281,8 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
     );
   }
 
-  // If not logged in or not owner
-  if (!currentUser || !isOwner) {
+  // If not logged in or not owner (and not demo mode)
+  if (!canViewDashboard) {
     return (
       <div className="flex flex-col w-full min-h-screen bg-[#fdf9f3] max-w-lg mx-auto">
         <header className="sticky top-0 z-40 w-full bg-[#fdf9f3]/90 backdrop-blur-xl border-b border-[#e6e2dc]/60 px-4 h-16 flex items-center justify-between">
@@ -256,6 +339,17 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               <span>Google 계정으로 사장님 로그인</span>
             </button>
 
+            <button
+              onClick={() => {
+                setIsDemoMode(true);
+                setOrders(DEMO_ORDERS);
+              }}
+              className="w-full h-12 rounded-full bg-[#fedcc5] text-[#785f4d] font-bold text-[14px] flex items-center justify-center gap-2 hover:bg-[#fccca7] active:scale-95 transition-all shadow-xs"
+            >
+              <span className="material-symbols-outlined text-[20px]">preview</span>
+              <span>예시 데이터로 사장님 화면 둘러보기</span>
+            </button>
+
             {currentUser && (
               <button
                 onClick={handleLogout}
@@ -291,7 +385,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               <div className="flex items-center gap-1.5">
                 <span className="font-bold text-[16px] text-[#725947] tracking-tight">오늘의 케이크</span>
                 <span className="px-1.5 py-0.5 rounded-full bg-[#ffd9dd] text-[#aa2a49] text-[10px] font-bold">
-                  주문·예약
+                  {isDemoMode ? '예시 모드' : '주문·예약'}
                 </span>
               </div>
               <div className="flex items-center gap-1 text-[11px]">
@@ -310,16 +404,35 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             >
               <span className="material-symbols-outlined text-[22px]">storefront</span>
             </button>
-            <button
-              onClick={handleLogout}
-              title="로그아웃"
-              className="w-10 h-10 flex items-center justify-center rounded-full text-[#725947] hover:bg-[#ebe8e2] transition-colors"
-            >
-              <span className="material-symbols-outlined text-[22px]">logout</span>
-            </button>
+            {isDemoMode ? (
+              <button
+                onClick={() => setIsDemoMode(false)}
+                title="로그인 화면으로 이동"
+                className="px-2.5 py-1.5 rounded-full bg-[#fedcc5] text-[#785f4d] text-[12px] font-bold hover:bg-[#fccca7] transition-all flex items-center gap-1"
+              >
+                <span className="material-symbols-outlined text-[16px]">login</span>
+                <span>로그인하기</span>
+              </button>
+            ) : (
+              <button
+                onClick={handleLogout}
+                title="로그아웃"
+                className="w-10 h-10 flex items-center justify-center rounded-full text-[#725947] hover:bg-[#ebe8e2] transition-colors"
+              >
+                <span className="material-symbols-outlined text-[22px]">logout</span>
+              </button>
+            )}
           </div>
         </div>
       </header>
+
+      {/* Demo Mode Alert Banner */}
+      {isDemoMode && (
+        <div className="sticky top-16 z-30 w-full bg-[#aa2a49] text-white py-2.5 px-4 text-center shadow-md flex items-center justify-center gap-1.5 font-bold text-[13px] tracking-tight">
+          <span className="material-symbols-outlined text-[18px]">info</span>
+          <span>예시 데이터입니다. 실제 문의는 사장 Gmail로 로그인해야 보입니다</span>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="flex flex-col w-full max-w-lg mx-auto px-4 pt-4 gap-4">
@@ -335,7 +448,14 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             </h1>
           </div>
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => {
+              if (isDemoMode) {
+                setOrders(DEMO_ORDERS);
+                showTemporaryNotice('예시 데이터가 초기 상태로 초기화되었습니다.');
+              } else {
+                window.location.reload();
+              }
+            }}
             title="새로고침"
             className="w-10 h-10 rounded-full bg-white border border-[#e6e2dc] flex items-center justify-center text-[#725947] hover:bg-[#f1ede7] transition-all shadow-xs"
           >
